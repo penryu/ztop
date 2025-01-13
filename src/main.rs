@@ -1,5 +1,11 @@
 // vim: tw=80
-use std::{error::Error, io, num::NonZeroUsize, time::Duration};
+use std::{
+    error::Error,
+    io,
+    io::IsTerminal,
+    num::NonZeroUsize,
+    time::Duration,
+};
 
 use clap::Parser;
 use crossterm::event::KeyCode;
@@ -208,8 +214,30 @@ fn main() -> Result<(), Box<dyn Error>> {
         cli.reverse,
         col_idx,
     );
-    let mut filter_popup = FilterPopup::default();
     let stdout = io::stdout();
+
+    if !stdout.is_terminal() {
+        let headers =
+            ["ops_r", "r_s", "ops_w", "w_s", "ops_d", "d_s", "name"].join("\t");
+        println!("{headers}");
+
+        for e in app.elements() {
+            println!(
+                "{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{:.0}\t{}",
+                e.ops_r,
+                e.r_s / 1024.0,
+                e.ops_w,
+                e.w_s / 1024.0,
+                e.ops_d,
+                e.d_s / 1024.0,
+                e.name
+            );
+        }
+
+        return Ok(());
+    }
+
+    let mut filter_popup = FilterPopup::default();
     crossterm::terminal::enable_raw_mode().unwrap();
 
     let backend = CrosstermBackend::new(stdout);
